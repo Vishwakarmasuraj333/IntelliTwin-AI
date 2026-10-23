@@ -15,13 +15,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark h-full antialiased">
-      <body className="min-h-full flex flex-col bg-[#070B14] text-slate-100 cyber-grid">
+    <html lang="en" className="dark h-full antialiased" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col bg-[#070B14] text-slate-100 cyber-grid transition-colors duration-250">
         <Navbar />
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {children}
         </main>
-        <footer className="w-full border-t border-slate-900 bg-[#070B14]/80 py-4 text-center font-mono text-[11px] text-slate-500">
+        <footer className="w-full border-t border-slate-800/80 bg-[#070B14]/90 py-4 text-center font-mono text-[11px] text-slate-500 transition-colors">
           IntelliTwin AI &copy; 2026 &mdash; Enterprise SOC AI Platform & M.Sc. IT Capstone Project &mdash; Powered by UNSW-NB15, SHAP & Google Gemini
         </footer>
       </body>
