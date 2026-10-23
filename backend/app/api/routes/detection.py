@@ -1,11 +1,15 @@
 """
 Real-Time Detection & Network Simulator API Endpoints
+-----------------------------------------------------
+Asynchronous, threadpool-offloaded inference gateway for cybersecurity telemetry.
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from app.api.deps import get_db, get_optional_user
+from app.core.rate_limit import predict_limiter
 from app.models.user import User
 from app.models.event import SecurityEvent
 from app.schemas.detection import NetworkPacketInput, PredictionResponse, ShapFeature
@@ -144,16 +148,27 @@ def get_attack_presets():
     return REALISTIC_PRESETS
 
 @router.post("/predict", response_model=PredictionResponse)
-def predict_network_event(
+async def predict_network_event(
+    request: Request,
     packet: NetworkPacketInput,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_optional_user)
 ):
-    # 1. Run Machine Learning Inference
-    result = ml_engine.predict(packet.model_dump())
+    predict_limiter.check(request)
+    if ml_engine.model is None or ml_engine.preprocessor is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Machine learning inference model or preprocessor is not loaded. Train or deploy models before inference."
+        )
+
+    # 1. Run Machine Learning Inference offloaded from event loop
+    raw_dict = packet.model_dump()
+    result = await run_in_threadpool(ml_engine.predict, raw_dict)
     
-    # 2. Compute Explainable AI (SHAP) attributions
-    shap_factors = shap_service.explain_instance(result["enriched_features"], top_k=8)
+    # 2. Compute Explainable AI (SHAP) attributions offloaded from event loop
+    shap_factors, base_val, shap_status = await run_in_threadpool(
+        shap_service.explain_instance, result["enriched_features"], 8
+    )
     
     # 3. Persist Event into Database
     user_id = current_user.id if current_user else None
@@ -191,12 +206,17 @@ def predict_network_event(
         "event_id": event.id,
         "prediction": result["prediction"],
         "confidence": result["confidence"],
+        "classifier_probability": result["classifier_probability"],
         "risk_score": result["risk_score"],
+        "anomaly_score": result["anomaly_score"],
+        "uncertainty": result["uncertainty"],
         "severity": result["severity"],
         "attack_category": result["attack_category"],
         "model_name": result["model_name"],
         "model_version": result["model_version"],
         "shap_values": shap_factors,
+        "base_value": base_val,
+        "shap_status": shap_status,
         "analyzed_at": event.created_at,
         "input_features": result["enriched_features"]
     }

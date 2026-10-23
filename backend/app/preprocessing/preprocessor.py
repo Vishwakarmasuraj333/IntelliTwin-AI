@@ -3,19 +3,23 @@ UNSW-NB15 Cybersecurity Feature Preprocessing Pipeline
 ------------------------------------------------------
 Cleans, encodes categorical network attributes, performs feature scaling,
 and serializes pipeline artifacts for real-time inference.
+Guarantees strict train/inference parity and zero target leakage.
 """
 
 import os
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import RobustScaler, LabelEncoder
+from typing import Dict, Any, List
+from sklearn.preprocessing import RobustScaler, OrdinalEncoder
+from sklearn.compose import ColumnTransformer
 
 PREPROCESSOR_DIR = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(os.path.dirname(PREPROCESSOR_DIR), "models")
+BACKEND_DIR = os.path.dirname(os.path.dirname(PREPROCESSOR_DIR))
+PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
+MODELS_DIR = os.path.join(PROJECT_ROOT, "ml-engine", "models")
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-# Selected robust feature set for detection and SHAP explanation
 SELECTED_FEATURES = [
     'dur', 'proto', 'service', 'state', 'spkts', 'dpkts', 'sbytes', 'dbytes',
     'rate', 'sttl', 'dttl', 'sload', 'dload', 'sloss', 'dloss', 'sinpkt',
@@ -27,80 +31,76 @@ CATEGORICAL_COLS = ['proto', 'service', 'state']
 NUMERICAL_COLS = [c for c in SELECTED_FEATURES if c not in CATEGORICAL_COLS]
 
 class NetworkTrafficPreprocessor:
+    """
+    Standardized Preprocessor fitting exclusively on training data.
+    Uses ColumnTransformer with RobustScaler for numerical features
+    and OrdinalEncoder with handle_unknown='use_encoded_value' for categoricals.
+    """
     def __init__(self):
-        self.encoders = {}
-        self.scaler = RobustScaler()
-        self.feature_names = SELECTED_FEATURES
+        self.feature_names = list(SELECTED_FEATURES)
+        self.numerical_cols = list(NUMERICAL_COLS)
+        self.categorical_cols = list(CATEGORICAL_COLS)
         self.is_fitted = False
         
+        self.transformer = ColumnTransformer(
+            transformers=[
+                ('num', RobustScaler(), self.numerical_cols),
+                ('cat', OrdinalEncoder(
+                    handle_unknown='use_encoded_value',
+                    unknown_value=-1
+                ), self.categorical_cols)
+            ],
+            remainder='drop'
+        )
+
     def fit(self, df: pd.DataFrame):
-        df_copy = df.copy()
-        
-        # Fit LabelEncoders for categorical columns
-        for col in CATEGORICAL_COLS:
-            le = LabelEncoder()
-            # Convert to string and handle unseen values safely
-            col_data = df_copy[col].astype(str).tolist()
-            col_data.append("unknown")
-            le.fit(col_data)
-            self.encoders[col] = le
-            
-        # Transform categoricals
-        for col in CATEGORICAL_COLS:
-            df_copy[col] = self.encoders[col].transform(df_copy[col].astype(str))
-            
-        # Fit scaler on numerical features
-        self.scaler.fit(df_copy[NUMERICAL_COLS])
+        """Fits preprocessing exclusively on the provided training dataframe."""
+        df_clean = self._validate_and_sanitize(df, is_training=True)
+        self.transformer.fit(df_clean)
         self.is_fitted = True
         return self
-        
+
     def transform(self, df: pd.DataFrame) -> np.ndarray:
+        """Transforms a dataframe into normalized feature matrix."""
         if not self.is_fitted:
-            raise ValueError("Preprocessor has not been fitted yet!")
-            
-        df_copy = df.copy()
-        
-        # Ensure all required features are present; if missing, fill sensible defaults
-        for col in SELECTED_FEATURES:
-            if col not in df_copy.columns:
-                if col in CATEGORICAL_COLS:
-                    df_copy[col] = "unknown"
-                else:
-                    df_copy[col] = 0.0
-                    
-        # Encode categoricals with fallback for unseen classes
-        for col in CATEGORICAL_COLS:
-            le = self.encoders[col]
-            classes = set(le.classes_)
-            df_copy[col] = df_copy[col].astype(str).apply(lambda x: x if x in classes else "unknown")
-            df_copy[col] = le.transform(df_copy[col])
-            
-        # Scale numericals
-        scaled_numericals = self.scaler.transform(df_copy[NUMERICAL_COLS])
-        scaled_num_df = pd.DataFrame(scaled_numericals, columns=NUMERICAL_COLS, index=df_copy.index)
-        
-        # Combine
-        combined_df = pd.concat([df_copy[CATEGORICAL_COLS], scaled_num_df], axis=1)
-        # Reorder to match exact SELECTED_FEATURES order
-        ordered_df = combined_df[SELECTED_FEATURES]
-        return ordered_df.values
-        
-    def transform_single(self, packet_dict: dict) -> np.ndarray:
+            raise ValueError("Preprocessor has not been fitted yet! Call fit() on training data first.")
+        df_clean = self._validate_and_sanitize(df, is_training=False)
+        matrix = self.transformer.transform(df_clean)
+        matrix = np.nan_to_num(matrix, nan=0.0, posinf=1.0, neginf=-1.0)
+        return matrix
+
+    def transform_single(self, packet_dict: Dict[str, Any]) -> np.ndarray:
         """Transforms a single network flow dictionary for real-time inference."""
         df = pd.DataFrame([packet_dict])
         return self.transform(df)
+
+    def _validate_and_sanitize(self, df: pd.DataFrame, is_training: bool = False) -> pd.DataFrame:
+        """Validates schema, cleans missing/infinite values, and enforces feature order."""
+        df_copy = pd.DataFrame(index=df.index)
+        
+        for col in self.numerical_cols:
+            if col in df.columns:
+                series = pd.to_numeric(df[col], errors='coerce')
+                series = series.replace([np.inf, -np.inf], np.nan)
+                df_copy[col] = series.fillna(0.0)
+            else:
+                df_copy[col] = 0.0
+                
+        for col in self.categorical_cols:
+            if col in df.columns:
+                df_copy[col] = df[col].astype(str).str.strip().replace({'': '-', 'nan': '-', 'None': '-'})
+            else:
+                df_copy[col] = '-'
+                
+        return df_copy[SELECTED_FEATURES]
 
     def save(self, filepath: str = None):
         if filepath is None:
             filepath = os.path.join(MODELS_DIR, "preprocessor.joblib")
         joblib.dump(self, filepath)
-        print(f"Saved preprocessor to {filepath}")
 
     @classmethod
     def load(cls, filepath: str = None):
         if filepath is None:
             filepath = os.path.join(MODELS_DIR, "preprocessor.joblib")
         return joblib.load(filepath)
-
-if __name__ == "__main__":
-    print(f"Feature schema defined with {len(SELECTED_FEATURES)} attributes.")

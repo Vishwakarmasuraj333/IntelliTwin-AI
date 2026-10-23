@@ -12,8 +12,8 @@ class IncidentReport(Base):
     __tablename__ = "incident_reports"
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    event_id = Column(String(36), ForeignKey("security_events.id", ondelete="CASCADE"), nullable=False)
-    analyst_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    event_id = Column(String(36), ForeignKey("security_events.id", ondelete="CASCADE"), nullable=False, index=True)
+    analyst_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     
     title = Column(String(255), nullable=False)
     summary = Column(Text, nullable=False)

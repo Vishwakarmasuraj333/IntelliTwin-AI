@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: intellitwin-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: intellitwin
+      POSTGRES_USER: intellitwin_user
+      POSTGRES_PASSWORD: intellitwin_secure_dev_password_change_in_prod
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U intellitwin_user -d intellitwin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: intellitwin-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://intellitwin_user:intellitwin_secure_dev_password_change_in_prod@db:5432/intellitwin
+      SECRET_KEY: replace_with_a_cryptographically_random_256bit_hex_secret_in_production
+      ENVIRONMENT: production
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      ADMIN_INITIAL_PASSWORD: SetAStrongPasswordHere123!
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: gemini-1.5-flash
+      MODEL_DIR: /app/ml-engine/models
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: intellitwin-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      BACKEND_INTERNAL_URL: http://backend:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

@@ -2,10 +2,12 @@
 GenAI Security Operations Center (SOC) Analyst Endpoints
 """
 
+import json
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_optional_user
+from app.core.rate_limit import report_limiter
 from app.models.user import User
 from app.models.event import SecurityEvent
 from app.models.report import IncidentReport
@@ -17,10 +19,12 @@ router = APIRouter(prefix="/reports", tags=["GenAI Security Analyst"])
 
 @router.post("/generate", response_model=GeminiReportResponse)
 def generate_ai_report(
+    request: Request,
     req: GeminiReportRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_optional_user)
 ):
+    report_limiter.check(request)
     event = db.query(SecurityEvent).filter(SecurityEvent.id == req.event_id).first()
     if not event:
         raise HTTPException(
@@ -42,7 +46,7 @@ def generate_ai_report(
         analyst_notes=req.custom_notes
     )
     
-    # Save Report in Database
+    # Save Report in Database with JSON-serialized raw output
     report = IncidentReport(
         event_id=event.id,
         analyst_id=user_id,
@@ -52,7 +56,7 @@ def generate_ai_report(
         mitre_techniques=report_dict.get("mitre_attack", []),
         investigation_steps=report_dict.get("investigation_steps", []),
         mitigation_playbook=report_dict.get("mitigation_playbook", []),
-        gemini_raw_output=str(report_dict)
+        gemini_raw_output=json.dumps(report_dict)
     )
     db.add(report)
     db.commit()
@@ -67,18 +71,26 @@ def generate_ai_report(
     
     return {
         "report_id": report.id,
+        "id": report.id,
         "event_id": event.id,
         "title": report.title,
         "executive_summary": report.summary,
+        "summary": report.summary,
         "technical_analysis": report_dict.get("technical_analysis", ""),
         "attack_category": report.attack_vector,
+        "attack_vector": report.attack_vector,
         "mitre_attack": report.mitre_techniques or [],
+        "mitre_techniques": report.mitre_techniques or [],
         "why_suspicious": report_dict.get("why_suspicious", []),
-        "investigation_steps": report.investigation_steps,
-        "mitigation_playbook": report.mitigation_playbook,
+        "investigation_steps": report.investigation_steps or [],
+        "mitigation_playbook": report.mitigation_playbook or [],
         "confidence_assessment": report_dict.get("confidence_assessment", "High confidence"),
-        "generated_at": report.created_at,
-        "model_used": report_dict.get("model_used", "Gemini 1.5")
+        "generated_at": report.created_at.isoformat() if report.created_at else "",
+        "created_at": report.created_at.isoformat() if report.created_at else "",
+        "model_used": report_dict.get("model_used", "Gemini 1.5"),
+        "is_ai_generated": report_dict.get("is_ai_generated", False),
+        "evidence_sources": report_dict.get("evidence_sources", []),
+        "limitations": report_dict.get("limitations", "Candidate hypotheses require analyst verification.")
     }
 
 @router.get("", response_model=List[dict])
@@ -86,16 +98,32 @@ def list_reports(limit: int = 50, offset: int = 0, db: Session = Depends(get_db)
     reports = db.query(IncidentReport).order_by(IncidentReport.created_at.desc()).offset(offset).limit(limit).all()
     out = []
     for r in reports:
+        raw_meta = {}
+        if r.gemini_raw_output:
+            try:
+                raw_meta = json.loads(r.gemini_raw_output)
+            except Exception:
+                raw_meta = {}
         out.append({
+            "report_id": r.id,
             "id": r.id,
             "event_id": r.event_id,
             "title": r.title,
+            "executive_summary": r.summary,
             "summary": r.summary,
+            "attack_category": r.attack_vector,
             "attack_vector": r.attack_vector,
-            "mitre_techniques": r.mitre_techniques,
-            "investigation_steps": r.investigation_steps,
-            "mitigation_playbook": r.mitigation_playbook,
-            "created_at": r.created_at
+            "mitre_attack": r.mitre_techniques or [],
+            "mitre_techniques": r.mitre_techniques or [],
+            "technical_analysis": raw_meta.get("technical_analysis", ""),
+            "why_suspicious": raw_meta.get("why_suspicious", []),
+            "investigation_steps": r.investigation_steps or [],
+            "mitigation_playbook": r.mitigation_playbook or [],
+            "confidence_assessment": raw_meta.get("confidence_assessment", "High confidence"),
+            "model_used": raw_meta.get("model_used", "Gemini 1.5 Flash (Fallback)"),
+            "is_ai_generated": raw_meta.get("is_ai_generated", False),
+            "generated_at": r.created_at.isoformat() if r.created_at else "",
+            "created_at": r.created_at.isoformat() if r.created_at else ""
         })
     return out
 
@@ -104,14 +132,30 @@ def get_report_detail(report_id: str, db: Session = Depends(get_db)):
     r = db.query(IncidentReport).filter(IncidentReport.id == report_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="Incident report not found.")
+    raw_meta = {}
+    if r.gemini_raw_output:
+        try:
+            raw_meta = json.loads(r.gemini_raw_output)
+        except Exception:
+            raw_meta = {}
     return {
+        "report_id": r.id,
         "id": r.id,
         "event_id": r.event_id,
         "title": r.title,
+        "executive_summary": r.summary,
         "summary": r.summary,
+        "attack_category": r.attack_vector,
         "attack_vector": r.attack_vector,
-        "mitre_techniques": r.mitre_techniques,
-        "investigation_steps": r.investigation_steps,
-        "mitigation_playbook": r.mitigation_playbook,
-        "created_at": r.created_at
+        "mitre_attack": r.mitre_techniques or [],
+        "mitre_techniques": r.mitre_techniques or [],
+        "technical_analysis": raw_meta.get("technical_analysis", ""),
+        "why_suspicious": raw_meta.get("why_suspicious", []),
+        "investigation_steps": r.investigation_steps or [],
+        "mitigation_playbook": r.mitigation_playbook or [],
+        "confidence_assessment": raw_meta.get("confidence_assessment", "High confidence"),
+        "model_used": raw_meta.get("model_used", "Gemini 1.5 Flash (Fallback)"),
+        "is_ai_generated": raw_meta.get("is_ai_generated", False),
+        "generated_at": r.created_at.isoformat() if r.created_at else "",
+        "created_at": r.created_at.isoformat() if r.created_at else ""
     }

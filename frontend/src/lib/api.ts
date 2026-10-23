@@ -42,6 +42,18 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T>
 }
 
 export const api = {
+  // Authentication & Access Control
+  login: (email: string, password: string) =>
+    fetchJson<{ access_token: string; token_type: string; user: any }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+  register: (name: string, email: string, password: string, role?: string) =>
+    fetchJson<{ access_token: string; token_type: string; user: any }>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password, role }),
+    }),
+
   // Dashboard Telemetry
   getDashboardStats: () => fetchJson<DashboardStats>('/dashboard/stats'),
 

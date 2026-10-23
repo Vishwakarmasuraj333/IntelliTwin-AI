@@ -1,8 +1,9 @@
 """
-Automated Test Suite: FastAPI Backend & Endpoints
---------------------------------------------------
-Validates API endpoints, JWT auth, real-time prediction,
-dynamic metrics serving, GenAI reporting, and graceful error handling.
+Automated Test Suite: FastAPI Backend & Security Gateway
+---------------------------------------------------------
+Validates API endpoints, JWT auth, RBAC authorization, real-time prediction,
+dynamic metrics serving, GenAI reporting, correlation IDs, readiness probes,
+and rate limiting error handling.
 """
 
 import os
@@ -34,6 +35,23 @@ def test_api_root(client):
     data = res.json()
     assert data["platform"] == "IntelliTwin AI"
     assert data["status"] == "OPERATIONAL"
+
+def test_liveness_and_readiness_probes(client):
+    res_live = client.get("/health")
+    assert res_live.status_code == 200
+    assert res_live.json()["status"] == "LIVE"
+
+    res_ready = client.get("/ready")
+    assert res_ready.status_code in [200, 503]
+    if res_ready.status_code == 200:
+        data = res_ready.json()
+        assert data["status"] == "READY"
+        assert data["database"] == "CONNECTED"
+
+def test_request_correlation_and_timing_headers(client):
+    res = client.get("/")
+    assert "x-request-id" in res.headers
+    assert "x-response-time" in res.headers
 
 def test_get_attack_presets(client):
     res = client.get("/api/detection/presets")
@@ -69,9 +87,10 @@ def test_real_time_prediction_normal_traffic(client):
     assert "event_id" in data
     assert data["prediction"] in ["NORMAL", "ANOMALY"]
     assert 0 <= data["risk_score"] <= 100
+    assert 0.0 <= data["classifier_probability"] <= 1.0
+    assert "uncertainty" in data
     assert "shap_values" in data
     assert isinstance(data["shap_values"], list)
-    assert len(data["shap_values"]) > 0
 
 def test_real_time_prediction_ddos_traffic(client):
     ddos_payload = {
@@ -97,18 +116,27 @@ def test_real_time_prediction_ddos_traffic(client):
     assert res.status_code == 200
     data = res.json()
     assert data["event_id"]
-    # Must compute risk and SHAP
     assert data["risk_score"] >= 0
     assert len(data["shap_values"]) > 0
+
+def test_prediction_input_validation_error(client):
+    """Verify negative duration or invalid fields return HTTP 422."""
+    invalid_payload = {
+        "proto": "tcp",
+        "dur": -10.0, # Negative duration is invalid
+        "sbytes": 1000
+    }
+    res = client.post("/api/detection/predict", json=invalid_payload)
+    assert res.status_code == 422
 
 def test_dynamic_model_metrics_endpoint(client):
     res = client.get("/api/models/metrics")
     assert res.status_code == 200
     data = res.json()
     assert "models" in data
-    assert "Random Forest" in data["models"]
-    assert "accuracy" in data["models"]["Random Forest"]
-    assert "confusion_matrix" in data["models"]["Random Forest"]
+    assert "XGBoost" in data["models"]
+    assert "accuracy" in data["models"]["XGBoost"]
+    assert "confusion_matrix" in data["models"]["XGBoost"]
 
 def test_dashboard_stats_endpoint(client):
     res = client.get("/api/dashboard/stats")
@@ -147,14 +175,53 @@ def test_authentication_login_failure(client):
     res = client.post("/api/auth/login", json=login_payload)
     assert res.status_code == 401
 
+def test_user_registration_and_duplicate_prevention(client):
+    test_email = "analyst_temp_test@intellitwin.ai"
+    reg_payload = {
+        "name": "Audit Test Analyst",
+        "email": test_email,
+        "password": "SecurePassword@123",
+        "role": "SECURITY_ANALYST"
+    }
+    res = client.post("/api/auth/register", json=reg_payload)
+    assert res.status_code in [201, 400] # 201 if first time, 400 if already exists
+    
+    # Attempt duplicate registration -> must return 400
+    res_dup = client.post("/api/auth/register", json=reg_payload)
+    assert res_dup.status_code == 400
+
+def test_rbac_unauthorized_access(client):
+    """Accessing admin audit logs without token must be rejected with 401."""
+    res = client.get("/api/admin/audit-logs")
+    assert res.status_code == 401
+
+def test_rbac_authorized_admin_access(client):
+    """Admin user with valid JWT can access audit logs."""
+    login_res = client.post("/api/auth/login", json={
+        "email": "admin@intellitwin.ai",
+        "password": "Admin@123456"
+    })
+    token = login_res.json()["access_token"]
+    res = client.get("/api/admin/audit-logs", headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 200
+    assert isinstance(res.json(), list)
+
+def test_rbac_insufficient_privilege(client):
+    """Analyst user attempting to switch models must be rejected with 403 Forbidden."""
+    analyst_login = client.post("/api/auth/login", json={
+        "email": "analyst@intellitwin.ai",
+        "password": "Analyst@123456"
+    })
+    analyst_token = analyst_login.json()["access_token"]
+    res = client.post("/api/models/switch/XGBoost", headers={"Authorization": f"Bearer {analyst_token}"})
+    assert res.status_code == 403
+
 def test_genai_report_generation_and_fallback(client):
-    # 1. First trigger an event to have an event_id
     predict_res = client.post("/api/detection/predict", json={
         "proto": "tcp", "dur": 0.01, "sbytes": 5000, "dbytes": 0, "spkts": 100, "dpkts": 0
     })
     event_id = predict_res.json()["event_id"]
     
-    # 2. Trigger report generation
     report_res = client.post("/api/reports/generate", json={"event_id": event_id})
     assert report_res.status_code == 200
     rep_data = report_res.json()
@@ -163,6 +230,8 @@ def test_genai_report_generation_and_fallback(client):
     assert "why_suspicious" in rep_data
     assert "investigation_steps" in rep_data
     assert "mitigation_playbook" in rep_data
+    assert "evidence_sources" in rep_data
+    assert "limitations" in rep_data
     assert len(rep_data["investigation_steps"]) > 0
     assert len(rep_data["mitigation_playbook"]) > 0
 

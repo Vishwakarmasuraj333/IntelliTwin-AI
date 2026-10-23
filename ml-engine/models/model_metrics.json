@@ -2,9 +2,11 @@
   "dataset": {
     "name": "UNSW-NB15",
     "source": "Cyber Range Lab of the Australian Centre for Cyber Security (ACCS)",
-    "total_samples": 20000,
-    "train_samples": 16000,
-    "test_samples": 4000,
+    "benchmark_citation": "Moustafa, N., & Slay, J. (2015). UNSW-NB15: a comprehensive data set for network intrusion detection systems (UNSW-NB15 network data set). IEEE MilCIS.",
+    "provenance": "Stratified authentic subset sampled from ACCS benchmark files with fixed seed 42",
+    "total_samples": 25000,
+    "train_samples": 20000,
+    "test_samples": 5000,
     "features_count": 24,
     "feature_list": [
       "dur",
@@ -32,24 +34,31 @@
       "ct_dst_sport_ltm",
       "ct_dst_src_ltm"
     ],
-    "anomaly_ratio_test": 0.46325
+    "anomaly_ratio_train": 0.68065,
+    "anomaly_ratio_test": 0.6806
   },
-  "trained_at": "2026-10-23T06:32:44.828914Z",
+  "trained_at": "2026-10-23T07:29:08.023073+00:00",
+  "random_seed": 42,
   "models": {
     "Random Forest": {
-      "accuracy": 1.0,
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1_score": 1.0,
-      "roc_auc": 1.0,
+      "accuracy": 0.9402,
+      "precision": 0.9686,
+      "recall": 0.9427,
+      "f1_score": 0.9555,
+      "roc_auc": 0.9903,
+      "pr_auc": 0.9954,
+      "cv_accuracy_mean": 0.9425,
+      "cv_accuracy_std": 0.0022,
+      "cv_f1_mean": 0.9571,
+      "cv_roc_auc_mean": 0.9908,
       "confusion_matrix": [
         [
-          2147,
-          0
+          1493,
+          104
         ],
         [
-          0,
-          1853
+          195,
+          3208
         ]
       ],
       "roc_curve": [
@@ -59,114 +68,114 @@
         },
         {
           "fpr": 0.0,
-          "tpr": 0.0
+          "tpr": 0.3626
         },
         {
           "fpr": 0.0,
-          "tpr": 0.0
+          "tpr": 0.4167
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9714
+          "tpr": 0.4564
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9714
+          "tpr": 0.4828
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9714
+          "tpr": 0.5101
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9903
+          "tpr": 0.5342
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9903
+          "tpr": 0.553
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9903
+          "tpr": 0.5739
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9968
+          "tpr": 0.6056
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9968
+          "tpr": 0.6312
         },
         {
           "fpr": 0.0,
-          "tpr": 0.9968
+          "tpr": 0.6641
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.9989
+          "fpr": 0.0006,
+          "tpr": 0.705
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.9989
+          "fpr": 0.0013,
+          "tpr": 0.7393
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.9989
+          "fpr": 0.0025,
+          "tpr": 0.814
         },
         {
-          "fpr": 0.0,
-          "tpr": 1.0
+          "fpr": 0.01,
+          "tpr": 0.8616
         },
         {
-          "fpr": 0.0,
-          "tpr": 1.0
+          "fpr": 0.0188,
+          "tpr": 0.888
         },
         {
-          "fpr": 0.0,
-          "tpr": 1.0
+          "fpr": 0.0269,
+          "tpr": 0.9039
         },
         {
-          "fpr": 0.0009,
-          "tpr": 1.0
+          "fpr": 0.0369,
+          "tpr": 0.9218
         },
         {
-          "fpr": 0.0009,
-          "tpr": 1.0
+          "fpr": 0.0507,
+          "tpr": 0.9318
         },
         {
-          "fpr": 0.0009,
-          "tpr": 1.0
+          "fpr": 0.0639,
+          "tpr": 0.9415
         },
         {
-          "fpr": 0.0019,
-          "tpr": 1.0
+          "fpr": 0.0827,
+          "tpr": 0.9521
         },
         {
-          "fpr": 0.0019,
-          "tpr": 1.0
+          "fpr": 0.0983,
+          "tpr": 0.9618
         },
         {
-          "fpr": 0.0019,
-          "tpr": 1.0
+          "fpr": 0.1121,
+          "tpr": 0.9756
         },
         {
-          "fpr": 0.0033,
-          "tpr": 1.0
+          "fpr": 0.1259,
+          "tpr": 0.9815
         },
         {
-          "fpr": 0.0033,
-          "tpr": 1.0
+          "fpr": 0.1503,
+          "tpr": 0.9874
         },
         {
-          "fpr": 0.0033,
-          "tpr": 1.0
+          "fpr": 0.1791,
+          "tpr": 0.9927
         },
         {
-          "fpr": 0.0098,
-          "tpr": 1.0
+          "fpr": 0.2054,
+          "tpr": 0.9971
         },
         {
-          "fpr": 0.0098,
+          "fpr": 0.2467,
           "tpr": 1.0
         },
         {
@@ -176,61 +185,66 @@
       ],
       "feature_importances": [
         {
-          "feature": "spkts",
-          "importance": 0.2045
+          "feature": "sbytes",
+          "importance": 0.1832
         },
         {
-          "feature": "ct_src_dport_ltm",
-          "importance": 0.2031
-        },
-        {
-          "feature": "dpkts",
-          "importance": 0.1592
-        },
-        {
-          "feature": "ct_srv_src",
-          "importance": 0.0959
-        },
-        {
-          "feature": "ct_dst_ltm",
-          "importance": 0.0858
-        },
-        {
-          "feature": "ct_dst_sport_ltm",
-          "importance": 0.0831
-        },
-        {
-          "feature": "sloss",
-          "importance": 0.0607
-        },
-        {
-          "feature": "ct_dst_src_ltm",
-          "importance": 0.0398
-        },
-        {
-          "feature": "dloss",
-          "importance": 0.0307
+          "feature": "rate",
+          "importance": 0.095
         },
         {
           "feature": "sttl",
-          "importance": 0.0165
+          "importance": 0.0878
+        },
+        {
+          "feature": "dpkts",
+          "importance": 0.0854
+        },
+        {
+          "feature": "dbytes",
+          "importance": 0.0783
+        },
+        {
+          "feature": "sinpkt",
+          "importance": 0.0478
+        },
+        {
+          "feature": "state",
+          "importance": 0.0441
+        },
+        {
+          "feature": "dur",
+          "importance": 0.0416
+        },
+        {
+          "feature": "spkts",
+          "importance": 0.0405
+        },
+        {
+          "feature": "ct_dst_ltm",
+          "importance": 0.0395
         }
       ]
     },
     "XGBoost": {
-      "accuracy": 0.9998,
-      "precision": 0.9995,
-      "recall": 1.0,
-      "f1_score": 0.9997,
-      "roc_auc": 1.0,
+      "accuracy": 0.9448,
+      "precision": 0.943,
+      "recall": 0.978,
+      "f1_score": 0.9602,
+      "roc_auc": 0.9901,
+      "pr_auc": 0.9954,
+      "cv_accuracy_mean": 0.9495,
+      "cv_accuracy_std": 0.0033,
+      "cv_f1_mean": 0.9634,
+      "cv_roc_auc_mean": 0.9907,
       "confusion_matrix": [
         [
-          2146,
-          1
+          1396,
+          201
         ],
         [
-          0,
-          1853
+          75,
+          3328
         ]
       ],
       "roc_curve": [
@@ -240,183 +254,188 @@
         },
         {
           "fpr": 0.0,
-          "tpr": 0.0
+          "tpr": 0.0741
         },
         {
           "fpr": 0.0,
-          "tpr": 0.0
+          "tpr": 0.1516
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6141
+          "tpr": 0.2251
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6141
+          "tpr": 0.2615
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6141
+          "tpr": 0.3356
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6632
+          "tpr": 0.4058
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6632
+          "tpr": 0.4655
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6632
+          "tpr": 0.5175
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6697
+          "tpr": 0.573
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6697
+          "tpr": 0.633
         },
         {
           "fpr": 0.0,
-          "tpr": 0.6697
+          "tpr": 0.7085
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7458
+          "fpr": 0.0013,
+          "tpr": 0.7526
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7458
+          "fpr": 0.0025,
+          "tpr": 0.8072
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7458
+          "fpr": 0.0088,
+          "tpr": 0.8581
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7534
+          "fpr": 0.0238,
+          "tpr": 0.8948
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7534
+          "fpr": 0.0407,
+          "tpr": 0.918
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7534
+          "fpr": 0.0564,
+          "tpr": 0.933
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7652
+          "fpr": 0.0764,
+          "tpr": 0.9515
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7652
+          "fpr": 0.0996,
+          "tpr": 0.9647
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7652
+          "fpr": 0.119,
+          "tpr": 0.975
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7658
+          "fpr": 0.1396,
+          "tpr": 0.9844
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7658
+          "fpr": 0.1778,
+          "tpr": 0.9921
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.7658
+          "fpr": 0.2185,
+          "tpr": 0.9994
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.8273
+          "fpr": 0.3557,
+          "tpr": 1.0
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.8273
+          "fpr": 0.4803,
+          "tpr": 1.0
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.8273
+          "fpr": 0.5861,
+          "tpr": 1.0
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.8278
+          "fpr": 0.6875,
+          "tpr": 1.0
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.8278
+          "fpr": 0.7771,
+          "tpr": 1.0
         },
         {
-          "fpr": 0.0,
-          "tpr": 0.83
+          "fpr": 1.0,
+          "tpr": 1.0
         }
       ],
       "feature_importances": [
         {
-          "feature": "spkts",
-          "importance": 0.99
+          "feature": "sbytes",
+          "importance": 0.7343
         },
         {
-          "feature": "ct_src_dport_ltm",
-          "importance": 0.0039
+          "feature": "state",
+          "importance": 0.0314
         },
         {
-          "feature": "dpkts",
-          "importance": 0.0022
-        },
-        {
-          "feature": "ct_dst_sport_ltm",
-          "importance": 0.0015
-        },
-        {
-          "feature": "ct_dst_ltm",
-          "importance": 0.001
-        },
-        {
-          "feature": "sloss",
-          "importance": 0.0007
+          "feature": "dinpkt",
+          "importance": 0.0286
         },
         {
           "feature": "ct_srv_src",
-          "importance": 0.0007
+          "importance": 0.0279
         },
         {
-          "feature": "dur",
-          "importance": 0.0
+          "feature": "dloss",
+          "importance": 0.025
         },
         {
-          "feature": "proto",
-          "importance": 0.0
+          "feature": "ct_dst_ltm",
+          "importance": 0.0195
         },
         {
-          "feature": "service",
-          "importance": 0.0
+          "feature": "ct_src_dport_ltm",
+          "importance": 0.0181
+        },
+        {
+          "feature": "ct_dst_src_ltm",
+          "importance": 0.017
+        },
+        {
+          "feature": "dttl",
+          "importance": 0.0164
+        },
+        {
+          "feature": "sinpkt",
+          "importance": 0.0118
         }
       ]
     },
     "Isolation Forest": {
-      "accuracy": 0.885,
-      "precision": 0.8711,
-      "recall": 0.8824,
-      "f1_score": 0.8767,
-      "roc_auc": 0.9481,
+      "accuracy": 0.5978,
+      "precision": 0.9168,
+      "recall": 0.4499,
+      "f1_score": 0.6036,
+      "roc_auc": 0.8323,
+      "pr_auc": 0.8912,
+      "cv_accuracy_mean": null,
+      "cv_accuracy_std": null,
+      "cv_f1_mean": null,
+      "cv_roc_auc_mean": null,
       "confusion_matrix": [
         [
-          1905,
-          242
+          1458,
+          139
         ],
         [
-          218,
-          1635
+          1872,
+          1531
         ]
       ],
       "roc_curve": [],
       "feature_importances": []
     }
   },
-  "best_model": "Random Forest"
+  "best_model": "XGBoost"
 }

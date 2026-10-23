@@ -29,13 +29,13 @@ TECHNICAL ANALYSIS:
 ${report.technical_analysis}
 
 WHY SUSPICIOUS:
-${report.why_suspicious.map((s) => `* ${s}`).join('\n')}
+${(report.why_suspicious || []).map((s) => `* ${s}`).join('\n')}
 
 INVESTIGATION STEPS:
-${report.investigation_steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+${(report.investigation_steps || []).map((s, i) => `${i + 1}. ${s}`).join('\n')}
 
 MITIGATION PLAYBOOK:
-${report.mitigation_playbook.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+${(report.mitigation_playbook || []).map((s, i) => `${i + 1}. ${s}`).join('\n')}
     `.trim();
     navigator.clipboard.writeText(text);
     alert('Incident report copied to clipboard.');
@@ -134,7 +134,7 @@ ${report.mitigation_playbook.map((s, i) => `${i + 1}. ${s}`).join('\n')}
               Explainable AI Anomaly Factors
             </div>
             <div className="space-y-2">
-              {report.why_suspicious.map((item, i) => (
+              {(report.why_suspicious || []).map((item, i) => (
                 <div
                   key={i}
                   className="p-2.5 rounded bg-slate-900/50 border border-slate-800 flex items-start gap-2"
@@ -153,7 +153,7 @@ ${report.mitigation_playbook.map((s, i) => `${i + 1}. ${s}`).join('\n')}
               Recommended SOC Investigation Playbook
             </div>
             <div className="space-y-2">
-              {report.investigation_steps.map((step, i) => (
+              {(report.investigation_steps || []).map((step, i) => (
                 <div
                   key={i}
                   className="p-2.5 rounded bg-slate-900/50 border border-slate-800 flex items-start gap-3"
@@ -174,7 +174,7 @@ ${report.mitigation_playbook.map((s, i) => `${i + 1}. ${s}`).join('\n')}
               Containment & Remediation Actions
             </div>
             <div className="space-y-2">
-              {report.mitigation_playbook.map((action, i) => (
+              {(report.mitigation_playbook || []).map((action, i) => (
                 <div
                   key={i}
                   className="p-2.5 rounded bg-emerald-950/20 border border-emerald-500/20 flex items-start gap-3"

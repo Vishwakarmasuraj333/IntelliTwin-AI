@@ -12,17 +12,17 @@ class SecurityEvent(Base):
     __tablename__ = "security_events"
     
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
     session_id = Column(String(64), nullable=True)
     
     # Raw Packet Flow Data
     event_data = Column(JSON, nullable=False)
     
     # Detection Output
-    prediction = Column(String(20), nullable=False) # NORMAL or ANOMALY
+    prediction = Column(String(20), nullable=False, index=True) # NORMAL or ANOMALY
     confidence = Column(Float, nullable=False)      # 0.0 to 1.0
     risk_score = Column(Integer, nullable=False)    # 0 to 100
-    severity = Column(String(20), nullable=False)   # LOW, MEDIUM, HIGH, CRITICAL
+    severity = Column(String(20), nullable=False, index=True)   # LOW, MEDIUM, HIGH, CRITICAL
     attack_category = Column(String(50), nullable=True) # Normal, DoS, Exploits, Fuzzers, Reconnaissance, etc.
     
     # Explainable AI Attributions

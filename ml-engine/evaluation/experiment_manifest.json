@@ -1,0 +1,51 @@
+{
+  "experiment_id": "EXP-UNSW-NB15-20261023-072939",
+  "timestamp": "2026-10-23T07:29:39.226922+00:00",
+  "random_seed": 42,
+  "environment": {
+    "python_version": "3.12.10",
+    "os": "Windows-11-10.0.22631-SP0",
+    "scikit_learn_version": "1.9.1",
+    "shap_version": "0.54.1"
+  },
+  "dataset_provenance": {
+    "source": "UNSW-NB15 Benchmark (ACCS)",
+    "train_sha256": "bec7dd5ec88dc2a0ccc7a07879d338395ed7421750f675fd0339e07dfe0648fa",
+    "test_sha256": "734fe6642edf758f7c94d7d9149426b49d202fe8e7bf0bef47392489c3c0a559",
+    "train_samples": 20000,
+    "test_samples": 5000,
+    "features": [
+      "dur",
+      "proto",
+      "service",
+      "state",
+      "spkts",
+      "dpkts",
+      "sbytes",
+      "dbytes",
+      "rate",
+      "sttl",
+      "dttl",
+      "sload",
+      "dload",
+      "sloss",
+      "dloss",
+      "sinpkt",
+      "dinpkt",
+      "smean",
+      "dmean",
+      "ct_srv_src",
+      "ct_dst_ltm",
+      "ct_src_dport_ltm",
+      "ct_dst_sport_ltm",
+      "ct_dst_src_ltm"
+    ]
+  },
+  "models_evaluated": [
+    "Random Forest",
+    "XGBoost",
+    "Isolation Forest"
+  ],
+  "champion_model": "XGBoost",
+  "champion_test_f1": 0.9602
+}

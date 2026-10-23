@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { DashboardStats, SecurityEventItem, IncidentReport } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
@@ -15,7 +16,9 @@ import {
   RefreshCw,
   TrendingUp,
   Layers,
-  ArrowUpRight,
+  ArrowRight,
+  Terminal,
+  AlertCircle
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -30,12 +33,13 @@ import {
   Legend,
 } from 'recharts';
 
-const ATTACK_COLORS = ['#EF4444', '#F59E0B', '#8B5CF6', '#00F0FF', '#10B981'];
+const ATTACK_COLORS = ['#EF4444', '#F59E0B', '#8B5CF6', '#00F0FF', '#10B981', '#EC4899'];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [events, setEvents] = useState<SecurityEventItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterSeverity, setFilterSeverity] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedReport, setSelectedReport] = useState<IncidentReport | null>(null);
@@ -44,15 +48,17 @@ export default function DashboardPage() {
 
   const fetchData = async () => {
     setLoading(true);
+    setError(null);
     try {
       const [statsData, eventsData] = await Promise.all([
-        api.getDashboardStats().catch(() => null),
-        api.getSecurityEvents({ limit: 25 }).catch(() => ({ total: 0, items: [] })),
+        api.getDashboardStats(),
+        api.getSecurityEvents({ limit: 50 }),
       ]);
-      if (statsData) setStats(statsData);
-      if (eventsData?.items) setEvents(eventsData.items);
-    } catch (e) {
+      setStats(statsData);
+      setEvents(eventsData?.items || []);
+    } catch (e: any) {
       console.error('Error loading dashboard data:', e);
+      setError(e?.message || 'Failed to connect to backend telemetry service.');
     } finally {
       setLoading(false);
     }
@@ -82,7 +88,7 @@ export default function DashboardPage() {
     const matchSearch =
       searchTerm === '' ||
       ev.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ev.attack_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (ev.attack_category && ev.attack_category.toLowerCase().includes(searchTerm.toLowerCase())) ||
       ev.prediction.toLowerCase().includes(searchTerm.toLowerCase());
     return matchSev && matchSearch;
   });
@@ -114,7 +120,45 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {/* KPI Cards */}
+      {/* Error Alert */}
+      {error && (
+        <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/30 flex items-center justify-between text-xs text-red-300">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            <span>Telemetry Disconnected: {error}</span>
+          </div>
+          <button
+            onClick={fetchData}
+            className="px-2.5 py-1 rounded bg-red-900/60 hover:bg-red-800 border border-red-500/40 text-red-200 text-[11px]"
+          >
+            Retry Connection
+          </button>
+        </div>
+      )}
+
+      {/* Empty Database Prompt */}
+      {!loading && stats && stats.total_analyzed === 0 && (
+        <div className="p-5 rounded-xl bg-[#0D1322] border border-cyan-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-cyan-400" />
+              No Telemetry Flows Ingested Yet
+            </div>
+            <p className="text-xs text-slate-400">
+              The database is ready. Inject realistic network traffic flows using the ML Simulator to see live metrics and SHAP waterfalls.
+            </p>
+          </div>
+          <Link
+            href="/detection"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-all shrink-0"
+          >
+            Launch Simulator
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
+      {/* KPI Cards (All Data-Driven - Zero Fabricated Numbers) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Analyzed */}
         <div className="p-4 rounded-xl bg-[#0D1322] border border-slate-800 space-y-1">
@@ -123,10 +167,10 @@ export default function DashboardPage() {
             <Layers className="w-4 h-4 text-slate-500" />
           </div>
           <div className="text-2xl font-bold text-slate-100">
-            {stats?.total_analyzed.toLocaleString() || '12,480'}
+            {loading && !stats ? '...' : (stats?.total_analyzed ?? 0).toLocaleString()}
           </div>
           <div className="text-[10px] text-emerald-400 flex items-center gap-1">
-            <TrendingUp className="w-3 h-3" /> Real-time active ingestion
+            <TrendingUp className="w-3 h-3" /> Live Database Stream
           </div>
         </div>
 
@@ -137,10 +181,10 @@ export default function DashboardPage() {
             <ShieldAlert className="w-4 h-4 text-red-400" />
           </div>
           <div className="text-2xl font-bold text-red-400">
-            {stats?.suspicious_events.toLocaleString() || '5,780'}
+            {loading && !stats ? '...' : (stats?.suspicious_events ?? 0).toLocaleString()}
           </div>
           <div className="text-[10px] text-slate-400">
-            Rate: <b className="text-red-400">{stats?.anomaly_rate_percent || 46.3}%</b>
+            Rate: <b className="text-red-400">{loading && !stats ? '...' : (stats?.anomaly_rate_percent ?? 0)}%</b>
           </div>
         </div>
 
@@ -151,10 +195,10 @@ export default function DashboardPage() {
             <Flame className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl font-bold text-amber-400">
-            {stats?.average_risk_score || 46.8} / 100
+            {loading && !stats ? '...' : (stats?.average_risk_score ?? 0)} / 100
           </div>
           <div className="text-[10px] text-slate-400">
-            Across active network flows
+            Across analyzed flows
           </div>
         </div>
 
@@ -162,10 +206,10 @@ export default function DashboardPage() {
         <div className="p-4 rounded-xl bg-[#0D1322] border border-red-500/30 space-y-1">
           <div className="text-[11px] text-red-400 flex items-center justify-between">
             <span>High & Critical Threats</span>
-            <AlertTriangle className="w-4 h-4 text-red-400 animate-pulse" />
+            <AlertTriangle className="w-4 h-4 text-red-400" />
           </div>
           <div className="text-2xl font-bold text-red-300">
-            {stats?.high_critical_count.toLocaleString() || '3,120'}
+            {loading && !stats ? '...' : (stats?.high_critical_count ?? 0).toLocaleString()}
           </div>
           <div className="text-[10px] text-red-400/80">Requires immediate SOC triage</div>
         </div>
@@ -177,7 +221,7 @@ export default function DashboardPage() {
             <Activity className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-bold text-emerald-400">
-            {stats?.normal_events.toLocaleString() || '6,700'}
+            {loading && !stats ? '...' : (stats?.normal_events ?? 0).toLocaleString()}
           </div>
           <div className="text-[10px] text-emerald-400/80">Verified benign operations</div>
         </div>
@@ -206,7 +250,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="h-64 w-full">
-            {stats?.timeline && stats.timeline.length > 0 ? (
+            {stats?.timeline && stats.timeline.some((t) => t.total > 0) ? (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats.timeline}>
                   <defs>
@@ -233,6 +277,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="total"
+                    name="Total Flows"
                     stroke="#00F0FF"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -241,6 +286,7 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="anomalies"
+                    name="Anomalies"
                     stroke="#EF4444"
                     strokeWidth={2}
                     fillOpacity={1}
@@ -249,8 +295,12 @@ export default function DashboardPage() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex items-center justify-center text-slate-500 text-xs">
-                Loading timeline telemetry...
+              <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs space-y-2">
+                <Activity className="w-8 h-8 text-slate-600" />
+                <span>No network flows recorded in this 24-hour timeline window.</span>
+                <Link href="/detection" className="text-cyan-400 hover:underline text-[11px]">
+                  Inject traffic flows via Simulator &rarr;
+                </Link>
               </div>
             )}
           </div>
@@ -304,7 +354,11 @@ export default function DashboardPage() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-slate-500 text-xs">Loading attack vectors...</div>
+              <div className="text-center text-slate-500 text-xs space-y-1">
+                <ShieldAlert className="w-6 h-6 text-slate-600 mx-auto" />
+                <div>Zero anomalous threat vectors recorded.</div>
+                <div className="text-[10px] text-slate-600">Simulate DoS or Port Scans to populate.</div>
+              </div>
             )}
           </div>
         </div>
@@ -369,7 +423,11 @@ export default function DashboardPage() {
               {filteredEvents.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-500">
-                    No matching security events found. Use the ML Simulator to inject traffic.
+                    No matching security events found in database. Use the{' '}
+                    <Link href="/detection" className="text-cyan-400 hover:underline">
+                      ML Simulator
+                    </Link>{' '}
+                    to generate live events.
                   </td>
                 </tr>
               ) : (

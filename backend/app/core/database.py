@@ -2,7 +2,8 @@
 Database Session Management & Schema Initialization
 ---------------------------------------------------
 Supports PostgreSQL in production and SQLite in local environment.
-Automatically seeds default administrative users and real ML model metrics.
+Implements secure administrator bootstrapping, environment-aware credential handling,
+and dynamic ML model metric synchronization.
 """
 
 import os
@@ -38,37 +39,56 @@ def get_db():
         db.close()
 
 def init_db():
-    """Initializes tables and seeds default users & trained models."""
+    """Initializes tables and seeds users & model metrics safely."""
     logger.info("Initializing database schema...")
     Base.metadata.create_all(bind=engine)
     
     db = SessionLocal()
     try:
-        # Seed Admin User
-        admin_user = db.query(User).filter(User.email == "admin@intellitwin.ai").first()
-        if not admin_user:
-            logger.info("Seeding default ADMIN user (admin@intellitwin.ai)...")
-            admin_user = User(
-                name="Chief Information Security Officer",
-                email="admin@intellitwin.ai",
-                password_hash=get_password_hash("Admin@123456"),
-                role="ADMIN",
-                is_active=True
-            )
-            db.add(admin_user)
-            
-        # Seed Analyst User
-        analyst_user = db.query(User).filter(User.email == "analyst@intellitwin.ai").first()
-        if not analyst_user:
-            logger.info("Seeding default SECURITY_ANALYST user (analyst@intellitwin.ai)...")
-            analyst_user = User(
-                name="Senior SOC Analyst",
-                email="analyst@intellitwin.ai",
-                password_hash=get_password_hash("Analyst@123456"),
-                role="SECURITY_ANALYST",
-                is_active=True
-            )
-            db.add(analyst_user)
+        # Secure Administrator Bootstrap
+        admin_email = settings.ADMIN_EMAIL
+        admin_user = db.query(User).filter(User.email == admin_email).first()
+
+        if settings.ENVIRONMENT == "production":
+            if not admin_user and settings.ADMIN_PASSWORD:
+                logger.info(f"Bootstrapping production ADMIN account ({admin_email}) via environment secret...")
+                admin_user = User(
+                    name="Chief Information Security Officer",
+                    email=admin_email,
+                    password_hash=get_password_hash(settings.ADMIN_PASSWORD),
+                    role="ADMIN",
+                    is_active=True
+                )
+                db.add(admin_user)
+            elif not admin_user:
+                logger.warning(
+                    "Production Mode: No ADMIN_PASSWORD provided. Default credentials will NOT be seeded. "
+                    "Set ADMIN_PASSWORD environment variable to bootstrap administrator account."
+                )
+        else:
+            # Development / Capstone Viva mode: Seed accounts with known evaluation credentials
+            if not admin_user:
+                logger.info("Seeding development evaluation ADMIN user (admin@intellitwin.ai)...")
+                admin_user = User(
+                    name="Chief Information Security Officer",
+                    email="admin@intellitwin.ai",
+                    password_hash=get_password_hash("Admin@123456"),
+                    role="ADMIN",
+                    is_active=True
+                )
+                db.add(admin_user)
+
+            analyst_user = db.query(User).filter(User.email == "analyst@intellitwin.ai").first()
+            if not analyst_user:
+                logger.info("Seeding development evaluation SECURITY_ANALYST user (analyst@intellitwin.ai)...")
+                analyst_user = User(
+                    name="Senior SOC Analyst",
+                    email="analyst@intellitwin.ai",
+                    password_hash=get_password_hash("Analyst@123456"),
+                    role="SECURITY_ANALYST",
+                    is_active=True
+                )
+                db.add(analyst_user)
             
         # Synchronize ML Models from model_metrics.json
         metrics_file = os.path.join(settings.MODELS_DIR, "model_metrics.json")
@@ -77,7 +97,7 @@ def init_db():
                 metrics_data = json.load(f)
                 
             models_info = metrics_data.get("models", {})
-            best_model_name = metrics_data.get("best_model", "Random Forest")
+            best_model_name = metrics_data.get("best_model", "XGBoost")
             
             for m_name, m_metrics in models_info.items():
                 existing = db.query(MLModel).filter(MLModel.model_name == m_name).first()

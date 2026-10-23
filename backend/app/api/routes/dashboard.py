@@ -1,8 +1,9 @@
 """
 Security Command Center Dashboard Statistics API
 ------------------------------------------------
-Aggregates telemetry event counts, severity breakdowns, attack distributions,
-timeline activity, and risk score metrics.
+Aggregates authentic telemetry event counts, severity breakdowns, attack distributions,
+timeline activity, and risk score metrics directly from the database.
+Zero fabricated placeholder metrics.
 """
 
 from typing import List, Dict, Any
@@ -37,7 +38,7 @@ def get_dashboard_statistics(db: Session = Depends(get_db)):
             sev_dict[s] = c
     severity_breakdown = [SeverityBreakdownItem(severity=k, count=v) for k, v in sev_dict.items()]
     
-    # Attack distribution
+    # Attack distribution from real events
     attack_rows = db.query(
         SecurityEvent.attack_category, func.count(SecurityEvent.id)
     ).filter(SecurityEvent.prediction == "ANOMALY").group_by(SecurityEvent.attack_category).all()
@@ -51,43 +52,35 @@ def get_dashboard_statistics(db: Session = Depends(get_db)):
                 count=c,
                 percentage=round((c / anomaly_denom) * 100, 1)
             ))
-            
-    # If database has few events yet, populate with benchmark baseline distributions
-    if total < 5:
-        total = 12480
-        anomalies = 5780
-        normal = 6700
-        avg_risk = 46.8
-        high_crit = 3120
-        severity_breakdown = [
-            SeverityBreakdownItem(severity="LOW", count=5900),
-            SeverityBreakdownItem(severity="MEDIUM", count=3460),
-            SeverityBreakdownItem(severity="HIGH", count=2120),
-            SeverityBreakdownItem(severity="CRITICAL", count=1000)
-        ]
-        attack_distribution = [
-            AttackDistributionItem(category="DoS", count=2100, percentage=36.3),
-            AttackDistributionItem(category="Exploits", count=1550, percentage=26.8),
-            AttackDistributionItem(category="Generic", count=920, percentage=15.9),
-            AttackDistributionItem(category="Reconnaissance", count=780, percentage=13.5),
-            AttackDistributionItem(category="Fuzzers", count=430, percentage=7.5)
-        ]
 
-    anomaly_rate = round((anomalies / max(total, 1)) * 100, 1)
+    anomaly_rate = round((anomalies / max(total, 1)) * 100, 1) if total > 0 else 0.0
     
-    # Construct 12-point Timeline
+    # Construct 12-slot 24-hour Timeline from real database events
     now = datetime.now(timezone.utc)
+    slot_duration = timedelta(hours=2)
     timeline = []
+    
     for i in range(11, -1, -1):
-        t_slot = now - timedelta(hours=i * 2)
-        slot_label = t_slot.strftime("%H:%M")
-        # Generates proportional hourly curve
-        base_slot_total = int(max(total // 24, 15) * (0.8 + 0.4 * (i % 3)))
-        slot_anomalies = int(base_slot_total * (anomaly_rate / 100.0))
-        slot_normal = base_slot_total - slot_anomalies
+        slot_end = now - (slot_duration * i)
+        slot_start = slot_end - slot_duration
+        slot_label = slot_end.strftime("%H:%M")
+
+        # Query events occurring in this 2-hour window
+        slot_total = db.query(SecurityEvent).filter(
+            SecurityEvent.created_at >= slot_start,
+            SecurityEvent.created_at < slot_end
+        ).count()
+        
+        slot_anomalies = db.query(SecurityEvent).filter(
+            SecurityEvent.created_at >= slot_start,
+            SecurityEvent.created_at < slot_end,
+            SecurityEvent.prediction == "ANOMALY"
+        ).count()
+        
+        slot_normal = slot_total - slot_anomalies
         timeline.append(TimelinePoint(
             timestamp=slot_label,
-            total=base_slot_total,
+            total=slot_total,
             anomalies=slot_anomalies,
             normal=slot_normal
         ))
@@ -97,7 +90,7 @@ def get_dashboard_statistics(db: Session = Depends(get_db)):
         suspicious_events=anomalies,
         normal_events=normal,
         anomaly_rate_percent=anomaly_rate,
-        average_risk_score=round(avg_risk, 1),
+        average_risk_score=round(float(avg_risk), 1),
         high_critical_count=high_crit,
         severity_breakdown=severity_breakdown,
         attack_distribution=attack_distribution,
