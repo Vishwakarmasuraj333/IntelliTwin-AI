@@ -1,0 +1,422 @@
+{
+  "dataset": {
+    "name": "UNSW-NB15",
+    "source": "Cyber Range Lab of the Australian Centre for Cyber Security (ACCS)",
+    "total_samples": 20000,
+    "train_samples": 16000,
+    "test_samples": 4000,
+    "features_count": 24,
+    "feature_list": [
+      "dur",
+      "proto",
+      "service",
+      "state",
+      "spkts",
+      "dpkts",
+      "sbytes",
+      "dbytes",
+      "rate",
+      "sttl",
+      "dttl",
+      "sload",
+      "dload",
+      "sloss",
+      "dloss",
+      "sinpkt",
+      "dinpkt",
+      "smean",
+      "dmean",
+      "ct_srv_src",
+      "ct_dst_ltm",
+      "ct_src_dport_ltm",
+      "ct_dst_sport_ltm",
+      "ct_dst_src_ltm"
+    ],
+    "anomaly_ratio_test": 0.46325
+  },
+  "trained_at": "2026-10-23T06:32:44.828914Z",
+  "models": {
+    "Random Forest": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "roc_auc": 1.0,
+      "confusion_matrix": [
+        [
+          2147,
+          0
+        ],
+        [
+          0,
+          1853
+        ]
+      ],
+      "roc_curve": [
+        {
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9714
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9714
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9714
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9903
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9903
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9903
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9968
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9968
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9968
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9989
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9989
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.9989
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0009,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0009,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0009,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0019,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0019,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0019,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0033,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0033,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0033,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0098,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 0.0098,
+          "tpr": 1.0
+        },
+        {
+          "fpr": 1.0,
+          "tpr": 1.0
+        }
+      ],
+      "feature_importances": [
+        {
+          "feature": "spkts",
+          "importance": 0.2045
+        },
+        {
+          "feature": "ct_src_dport_ltm",
+          "importance": 0.2031
+        },
+        {
+          "feature": "dpkts",
+          "importance": 0.1592
+        },
+        {
+          "feature": "ct_srv_src",
+          "importance": 0.0959
+        },
+        {
+          "feature": "ct_dst_ltm",
+          "importance": 0.0858
+        },
+        {
+          "feature": "ct_dst_sport_ltm",
+          "importance": 0.0831
+        },
+        {
+          "feature": "sloss",
+          "importance": 0.0607
+        },
+        {
+          "feature": "ct_dst_src_ltm",
+          "importance": 0.0398
+        },
+        {
+          "feature": "dloss",
+          "importance": 0.0307
+        },
+        {
+          "feature": "sttl",
+          "importance": 0.0165
+        }
+      ]
+    },
+    "XGBoost": {
+      "accuracy": 0.9998,
+      "precision": 0.9995,
+      "recall": 1.0,
+      "f1_score": 0.9997,
+      "roc_auc": 1.0,
+      "confusion_matrix": [
+        [
+          2146,
+          1
+        ],
+        [
+          0,
+          1853
+        ]
+      ],
+      "roc_curve": [
+        {
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.0
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6141
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6141
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6141
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6632
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6632
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6632
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6697
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6697
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.6697
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7458
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7458
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7458
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7534
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7534
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7534
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7652
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7652
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7652
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7658
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7658
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.7658
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.8273
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.8273
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.8273
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.8278
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.8278
+        },
+        {
+          "fpr": 0.0,
+          "tpr": 0.83
+        }
+      ],
+      "feature_importances": [
+        {
+          "feature": "spkts",
+          "importance": 0.99
+        },
+        {
+          "feature": "ct_src_dport_ltm",
+          "importance": 0.0039
+        },
+        {
+          "feature": "dpkts",
+          "importance": 0.0022
+        },
+        {
+          "feature": "ct_dst_sport_ltm",
+          "importance": 0.0015
+        },
+        {
+          "feature": "ct_dst_ltm",
+          "importance": 0.001
+        },
+        {
+          "feature": "sloss",
+          "importance": 0.0007
+        },
+        {
+          "feature": "ct_srv_src",
+          "importance": 0.0007
+        },
+        {
+          "feature": "dur",
+          "importance": 0.0
+        },
+        {
+          "feature": "proto",
+          "importance": 0.0
+        },
+        {
+          "feature": "service",
+          "importance": 0.0
+        }
+      ]
+    },
+    "Isolation Forest": {
+      "accuracy": 0.885,
+      "precision": 0.8711,
+      "recall": 0.8824,
+      "f1_score": 0.8767,
+      "roc_auc": 0.9481,
+      "confusion_matrix": [
+        [
+          1905,
+          242
+        ],
+        [
+          218,
+          1635
+        ]
+      ],
+      "roc_curve": [],
+      "feature_importances": []
+    }
+  },
+  "best_model": "Random Forest"
+}
