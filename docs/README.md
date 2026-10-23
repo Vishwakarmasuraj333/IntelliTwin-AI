@@ -5,7 +5,7 @@
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-black.svg?style=flat&logo=next.js)](https://nextjs.org)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=flat&logo=python)](https://www.python.org)
-[![Pytest](https://img.shields.io/badge/Tests-27%20Passed-brightgreen.svg?style=flat&logo=pytest)](https://pytest.org)
+[![Pytest](https://img.shields.io/badge/Tests-29%20Passed-brightgreen.svg?style=flat&logo=pytest)](https://pytest.org)
 [![Dataset](https://img.shields.io/badge/Dataset-UNSW--NB15%20Verified-blue.svg)](https://research.unsw.edu.au/projects/unsw-nb15-dataset)
 
 ---
@@ -126,4 +126,4 @@ npm run dev
 # In the repository root
 python -m pytest tests/ -v
 ```
-All **27 test cases pass** with zero failures across ML pipeline and backend API suites.
+All **29 test cases pass** with zero failures across ML pipeline, security RBAC, and live E2E user flow suites.

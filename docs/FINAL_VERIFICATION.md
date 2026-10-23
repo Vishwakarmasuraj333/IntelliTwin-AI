@@ -116,6 +116,22 @@ The complete operational flow was validated using actual database sessions and l
 5. **Report Archive Retrieval (`GET /api/reports`)**:
    - Retrieved archive listing and verified presence of newly created report with complete metadata.
 
+### 3.1 Distinction Between GenAI Execution Modes
+
+To ensure academic and professional transparency, tests distinguish between three operational GenAI states:
+1. **Autonomous Deterministic Fallback Mode (`test_full_live_analyst_flow_e2e`)**:
+   - Executes when `GEMINI_API_KEY` is omitted, offline, or rate-limited.
+   - Evaluates telemetry using internal deterministic rule heuristics and SHAP feature attributions.
+   - Outputs: `is_ai_generated: false`, `model_used: "Autonomous SOC Fallback Engine"`.
+   - Discloses explicitly in limitations that MITRE techniques represent candidate vectors rather than verified attribution.
+2. **Mocked Gemini API Mode (`test_configured_gemini_mocked_success_flow`)**:
+   - Mocks `google.generativeai.GenerativeModel.generate_content` returning RFC 8259 JSON.
+   - Verifies that server-side Pydantic validation (`GeminiStructuredReport`), error handling, and database insertion execute correctly without incurring Google Cloud billing or requiring active internet access.
+   - Outputs: `is_ai_generated: true`, `model_used: "Google Gemini (gemini-1.5-flash)"`.
+3. **Live Production Gemini Mode**:
+   - Activated when a genuine `GEMINI_API_KEY` is provided in the environment.
+   - Calls the live Gemini 1.5 Flash endpoint over TLS with a 15-second timeout and 2-attempt bounded retry budget.
+
 ---
 
 ## 4. Scientific Rigor & Dataset Provenance
@@ -138,8 +154,11 @@ The complete operational flow was validated using actual database sessions and l
 2. **Role-Based Access Control**: Strict least-privilege enforcement (`ADMIN`, `SECURITY_ANALYST`, `USER`).
 3. **Sliding Token Bucket Rate Limiting**: In-memory rate limiting throttles `/auth` (60/min), `/predict` (120/min), and `/reports` (20/min).
 4. **Prompt Injection Defense**: Sanitization strips code fences, control delimiters, and override directives before LLM prompt construction.
-5. **Production Bootstrap Guard**: System refuses to start in `ENVIRONMENT=production` if `ADMIN_INITIAL_PASSWORD` is omitted.
-6. **Zero Secrets in Git**: Clean `.env.example` templates provided; real secrets excluded.
+5. **Deployment Status Reality Check**:
+   - **Local Verification**: 100% completed and independently reproduced (FastAPI port 8000, Next.js port 3000, SQLite/PostgreSQL).
+   - **External Cloud Deployment**: Dockerfiles and deployment guides authored for Vercel and Render/AWS; **no public cloud deployment is currently active or claimed**.
+6. **Production Bootstrap Guard**: System refuses to start in `ENVIRONMENT=production` if `ADMIN_INITIAL_PASSWORD` is omitted.
+7. **Zero Secrets in Git**: Clean `.env.example` templates provided; real secrets excluded.
 
 ---
 

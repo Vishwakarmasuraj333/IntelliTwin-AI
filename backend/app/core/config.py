@@ -52,12 +52,16 @@ class Settings(BaseSettings):
     RATE_LIMIT_PREDICT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PREDICT_PER_MINUTE", "120"))
     RATE_LIMIT_REPORTS_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_REPORTS_PER_MINUTE", "30"))
 
-    # CORS Whitelist (Never use wildcard with credentials)
-    BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000"
-    ]
+    # CORS Whitelist (Environment configurable, never wildcard with credentials)
+    BACKEND_CORS_ORIGINS: List[str] = (
+        [origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
+        if os.getenv("CORS_ORIGINS")
+        else [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000"
+        ]
+    )
 
 settings = Settings()

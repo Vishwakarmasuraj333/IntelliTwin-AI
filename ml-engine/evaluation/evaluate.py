@@ -38,12 +38,17 @@ def evaluate_all():
     print(f"EVALUATING ON HELD-OUT TEST SPLIT ({len(y_test):,} SAMPLES)")
     print("=" * 70)
     
-    for model_file in ["best_model.joblib", "xgboost.joblib", "random_forest.joblib"]:
+    for model_file in ["best_model.joblib", "xgboost.joblib", "random_forest.joblib", "isolation_forest.joblib"]:
         path = os.path.join(MODELS_DIR, model_file)
         if os.path.exists(path):
             model = joblib.load(path)
-            preds = model.predict(X_test)
-            probs = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else None
+            if "isolation" in model_file:
+                raw_preds = model.predict(X_test)
+                preds = np.where(raw_preds == -1, 1, 0)
+                probs = -model.decision_function(X_test)
+            else:
+                preds = model.predict(X_test)
+                probs = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else None
             
             print(f"\n--- MODEL: {model_file} ---")
             print(classification_report(y_test, preds, target_names=["NORMAL (0)", "ATTACK (1)"], digits=4))
